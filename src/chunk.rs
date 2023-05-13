@@ -9,7 +9,7 @@ const CRC: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
 
 #[derive(Debug)]
 pub struct ChunkError {
-    message: String,
+    pub message: String,
 }
 impl Display for ChunkError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -77,7 +77,7 @@ impl Display for Chunk {
 }
 
 impl Chunk {
-    fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
+    pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
         let crc_bytes = Self::get_bytes_for_crc(&chunk_type, &data);
         Chunk {
             length: data.len() as u32,
@@ -96,7 +96,7 @@ impl Chunk {
     fn length(&self) -> u32 {
         self.length
     }
-    fn chunk_type(&self) -> &ChunkType {
+    pub fn chunk_type(&self) -> &ChunkType {
         &self.chunk_type
     }
     fn data(&self) -> &[u8] {
@@ -105,11 +105,16 @@ impl Chunk {
     fn crc(&self) -> u32 {
         self.crc
     }
-    fn data_as_string(&self) -> Result<String, Box<dyn Error>> {
+    pub fn data_as_string(&self) -> Result<String, Box<dyn Error>> {
         Ok(String::from_utf8(self.data.clone()).unwrap())
     }
-    fn as_bytes(&self) -> Vec<u8> {
-        vec![]
+    pub fn as_bytes(&self) -> Vec<u8> {
+        let mut result_bytes = vec![];
+        result_bytes.extend(self.length.to_be_bytes());
+        result_bytes.extend(self.chunk_type.bytes());
+        result_bytes.extend(&self.data);
+        result_bytes.extend(self.crc.to_be_bytes());
+        result_bytes
     }
 }
 

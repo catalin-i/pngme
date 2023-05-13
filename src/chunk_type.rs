@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 #[derive(Debug, Eq, PartialEq)]
-pub(crate) struct ChunkType {
+pub struct ChunkType {
     data: [u8; 4],
 }
 #[derive(Debug)]
