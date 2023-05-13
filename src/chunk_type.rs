@@ -1,13 +1,26 @@
-use std::fmt::{Display, Error, Formatter};
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 #[derive(Debug, Eq, PartialEq)]
-struct ChunkType {
+pub(crate) struct ChunkType {
     data: [u8; 4],
 }
+#[derive(Debug)]
+pub struct ChunkTypeError {
+    pub message: String,
+}
+
+impl Display for ChunkTypeError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl Error for ChunkTypeError {}
 
 impl ChunkType {
-    fn bytes(&self) -> [u8; 4] {
+    pub fn bytes(&self) -> [u8; 4] {
         self.data
     }
 
@@ -27,13 +40,13 @@ impl ChunkType {
         self.data[3].is_ascii_lowercase()
     }
 
-    fn is_valid(&self) -> bool {
+    pub fn is_valid(&self) -> bool {
         self.is_reserved_bit_valid() && self.data.into_iter().all(|val| val.is_ascii())
     }
 }
 
 impl TryFrom<[u8; 4]> for ChunkType {
-    type Error = ();
+    type Error = ChunkTypeError;
 
     fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
         Ok(ChunkType { data: value })
@@ -41,11 +54,13 @@ impl TryFrom<[u8; 4]> for ChunkType {
 }
 
 impl FromStr for ChunkType {
-    type Err = Error;
+    type Err = ChunkTypeError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         return if s.chars().any(|val| val.is_numeric()) {
-            Err(Error)
+            Err(ChunkTypeError {
+                message: "numeric values not allowed in type".to_string(),
+            })
         } else {
             Ok(ChunkType {
                 data: s.as_bytes().try_into().unwrap(),
