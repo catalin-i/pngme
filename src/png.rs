@@ -81,11 +81,11 @@ impl Png {
         Png { chunks }
     }
 
-    fn append_chunk(&mut self, chunk: Chunk) {
+    pub fn append_chunk(&mut self, chunk: Chunk) {
         self.chunks.push(chunk);
     }
 
-    fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk, PngError> {
+    pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk, PngError> {
         let searched = self
             .chunks
             .iter()
@@ -103,17 +103,17 @@ impl Png {
         &Self::STANDARD_HEADER
     }
 
-    fn chunks(&self) -> &[Chunk] {
+    pub fn chunks(&self) -> &[Chunk] {
         self.chunks.as_slice()
     }
 
-    fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
+    pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
         self.chunks
             .iter()
             .find(|c| c.chunk_type().to_string() == chunk_type)
     }
 
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         let mut result_bytes = vec![];
         result_bytes.extend(self.header());
         for chunk in &self.chunks {
