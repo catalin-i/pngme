@@ -1,9 +1,7 @@
 use crate::chunk_type::ChunkType;
-use byteorder::{BigEndian, ReadBytesExt};
 use crc::{Crc, CRC_32_ISO_HDLC};
 use crate::Error;
 use std::fmt::{Display, Formatter};
-use std::io::Cursor;
 
 const CRC: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
 
@@ -20,9 +18,8 @@ impl TryFrom<&[u8]> for Chunk {
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let data_len = value.len();
         let mut iter = value.iter().cloned();
-        let first4: Vec<u8> = iter.by_ref().take(4).collect();
-        let mut rdr = Cursor::new(first4);
-        let length = rdr.read_u32::<BigEndian>().unwrap();
+        let first4: [u8; 4] = iter.by_ref().take(4).collect::<Vec<u8>>().as_slice().try_into()?;
+        let length = u32::from_be_bytes(first4);
 
         let second4: Vec<u8> = iter.by_ref().take(4).collect();
         let chunk_type =
@@ -30,8 +27,8 @@ impl TryFrom<&[u8]> for Chunk {
 
         let data_bytes: Vec<u8> = iter.by_ref().take(data_len - 12).collect();
 
-        let mut crc_cursor: Cursor<Vec<u8>> = Cursor::new(iter.take(4).collect());
-        let crc = crc_cursor.read_u32::<BigEndian>().unwrap();
+        let last_bytes : [u8; 4] = iter.take(4).collect::<Vec<u8>>().as_slice().try_into()?;
+        let crc = u32::from_be_bytes(last_bytes);
 
         let correct_crc =
             crc == CRC.checksum(Self::get_bytes_for_crc(&chunk_type, &data_bytes).as_slice());

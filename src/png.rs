@@ -1,8 +1,6 @@
 use crate::chunk::Chunk;
-use byteorder::{BigEndian, ReadBytesExt};
 use crate::Error;
 use std::fmt::{Display, Formatter};
-use std::io::Cursor;
 
 pub struct Png {
     chunks: Vec<Chunk>,
@@ -20,9 +18,8 @@ impl TryFrom<&[u8]> for Png {
             return Err(Error::from("Invalid header"));
         }
         while iter.len() >= 12 {
-            let first4: Vec<u8> = iter.clone().take(4).copied().collect();
-            let mut rdr = Cursor::new(first4);
-            let length = rdr.read_u32::<BigEndian>().unwrap();
+            let first4: [u8; 4] = iter.clone().take(4).copied().collect::<Vec<u8>>().as_slice().try_into()?;
+            let length = u32::from_be_bytes(first4);
 
             let chunk = Chunk::try_from(
                 iter.by_ref()
