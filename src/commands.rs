@@ -37,7 +37,7 @@ pub fn encode(path: &str, chunk_type: &str, message: &str) -> std::io::Result<bo
 
 pub fn decode(path: &str, chunk_type: &str) -> std::io::Result<bool> {
     let buffer = get_bytes_from_path(path);
-    let mut png = Png::try_from(buffer.as_slice()).unwrap();
+    let png = Png::try_from(buffer.as_slice()).unwrap();
 
     let target = png.chunk_by_type(chunk_type).expect("Unable to get chunk");
 

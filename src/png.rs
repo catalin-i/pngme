@@ -1,45 +1,15 @@
-use crate::chunk::{Chunk, ChunkError};
-use crate::chunk_type::ChunkTypeError;
+use crate::chunk::Chunk;
 use byteorder::{BigEndian, ReadBytesExt};
-use std::error::Error;
+use crate::Error;
 use std::fmt::{Display, Formatter};
 use std::io::Cursor;
-
-#[derive(Debug)]
-pub struct PngError {
-    message: String,
-}
-
-impl Display for PngError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message)
-    }
-}
-
-impl From<ChunkTypeError> for PngError {
-    fn from(err: ChunkTypeError) -> Self {
-        PngError {
-            message: err.message,
-        }
-    }
-}
-
-impl From<ChunkError> for PngError {
-    fn from(err: ChunkError) -> Self {
-        PngError {
-            message: err.message,
-        }
-    }
-}
-
-impl Error for PngError {}
 
 pub struct Png {
     chunks: Vec<Chunk>,
 }
 
 impl TryFrom<&[u8]> for Png {
-    type Error = PngError;
+    type Error = Error;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let mut chunks = vec![];
@@ -47,9 +17,7 @@ impl TryFrom<&[u8]> for Png {
 
         let header_bytes: Vec<u8> = iter.by_ref().take(8).copied().collect();
         if Self::STANDARD_HEADER != header_bytes.as_slice() {
-            return Err(PngError {
-                message: "invalid header".to_string(),
-            });
+            return Err(Error::from("Invalid header"));
         }
         while iter.len() >= 12 {
             let first4: Vec<u8> = iter.clone().take(4).copied().collect();
@@ -65,7 +33,7 @@ impl TryFrom<&[u8]> for Png {
             )?;
             chunks.push(chunk);
         }
-        return Ok(Png::from_chunks(chunks));
+        Ok(Png::from_chunks(chunks))
     }
 }
 impl Display for Png {
@@ -85,7 +53,7 @@ impl Png {
         self.chunks.push(chunk);
     }
 
-    pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk, PngError> {
+    pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk, Error> {
         let searched = self
             .chunks
             .iter()
@@ -93,9 +61,7 @@ impl Png {
         if let Some(position) = searched {
             Ok(self.chunks.remove(position))
         } else {
-            Err(PngError {
-                message: "chunck not found".to_string(),
-            })
+            Err(Error::from("chunk not found"))
         }
     }
 
@@ -129,7 +95,6 @@ mod tests {
     use crate::chunk::Chunk;
     use crate::chunk_type::ChunkType;
     use std::convert::TryFrom;
-    use std::str::FromStr;
 
     fn testing_chunks() -> Vec<Chunk> {
         let mut chunks = Vec::new();
@@ -146,7 +111,7 @@ mod tests {
         Png::from_chunks(chunks)
     }
 
-    fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk, PngError> {
+    fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk, Error> {
         use std::str::FromStr;
 
         let chunk_type = ChunkType::from_str(chunk_type)?;

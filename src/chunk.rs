@@ -1,31 +1,11 @@
-use crate::chunk_type::{ChunkType, ChunkTypeError};
+use crate::chunk_type::ChunkType;
 use byteorder::{BigEndian, ReadBytesExt};
 use crc::{Crc, CRC_32_ISO_HDLC};
-use std::error::Error;
+use crate::Error;
 use std::fmt::{Display, Formatter};
 use std::io::Cursor;
 
 const CRC: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
-
-#[derive(Debug)]
-pub struct ChunkError {
-    pub message: String,
-}
-impl Display for ChunkError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message)
-    }
-}
-
-impl From<ChunkTypeError> for ChunkError {
-    fn from(err: ChunkTypeError) -> Self {
-        ChunkError {
-            message: err.message,
-        }
-    }
-}
-
-impl Error for ChunkError {}
 
 pub struct Chunk {
     length: u32,
@@ -35,7 +15,7 @@ pub struct Chunk {
 }
 
 impl TryFrom<&[u8]> for Chunk {
-    type Error = ChunkError;
+    type Error = Error;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let data_len = value.len();
@@ -56,9 +36,7 @@ impl TryFrom<&[u8]> for Chunk {
         let correct_crc =
             crc == CRC.checksum(Self::get_bytes_for_crc(&chunk_type, &data_bytes).as_slice());
         if !correct_crc {
-            Err(ChunkError {
-                message: "Invalid chunk.".to_string(),
-            })
+            Err(Error::from("Invalid chunk"))
         } else {
             Ok(Chunk {
                 data: data_bytes,
@@ -105,7 +83,7 @@ impl Chunk {
     fn crc(&self) -> u32 {
         self.crc
     }
-    pub fn data_as_string(&self) -> Result<String, Box<dyn Error>> {
+    pub fn data_as_string(&self) -> Result<String, Error> {
         Ok(String::from_utf8(self.data.clone()).unwrap())
     }
     pub fn as_bytes(&self) -> Vec<u8> {

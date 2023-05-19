@@ -1,23 +1,11 @@
-use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+use crate::Error;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct ChunkType {
     data: [u8; 4],
 }
-#[derive(Debug)]
-pub struct ChunkTypeError {
-    pub message: String,
-}
-
-impl Display for ChunkTypeError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message)
-    }
-}
-
-impl Error for ChunkTypeError {}
 
 impl ChunkType {
     pub fn bytes(&self) -> [u8; 4] {
@@ -46,7 +34,7 @@ impl ChunkType {
 }
 
 impl TryFrom<[u8; 4]> for ChunkType {
-    type Error = ChunkTypeError;
+    type Error = Error;
 
     fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
         Ok(ChunkType { data: value })
@@ -54,13 +42,11 @@ impl TryFrom<[u8; 4]> for ChunkType {
 }
 
 impl FromStr for ChunkType {
-    type Err = ChunkTypeError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         return if s.chars().any(|val| val.is_numeric()) {
-            Err(ChunkTypeError {
-                message: "numeric values not allowed in type".to_string(),
-            })
+            Err(Error::from("numeric values not allowed in chunk type"))
         } else {
             Ok(ChunkType {
                 data: s.as_bytes().try_into().unwrap(),
